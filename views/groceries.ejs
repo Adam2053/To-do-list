@@ -1,0 +1,18 @@
+<%- include('header'); -%>
+    <div class="box" id="heading">
+        <h1> Groceries </h1>
+    </div>
+    <div class="box">
+        <%for(var i = 0; i<groc.length; i++){%>
+            <div class="item">
+                <input type="checkbox">
+                <p><%=groc[i]%></p>
+            </div>
+        <%}%>
+        <form class="item" action="/groceries" method="post">
+            <input type="text" name="newItem" autocomplete="off" placeholder="New Item">
+            <button type="submit" name="button">+</button>
+            <button type="submit" name="remove">-</button>
+        </form>
+    </div>
+<%- include('footer'); -%>
