@@ -9,6 +9,10 @@
                 <p><%=groc[i]%></p>
             </div>
         <%}%>
-        <%- include('button'); -%>
+        <form class="item" action="/groceries" method="post">
+            <input type="text" name="newItem" autocomplete="off" placeholder="New Item">
+            <button type="submit" name="button">+</button>
+            <button type="submit" name="remove">-</button>
+        </form>
     </div>
 <%- include('footer'); -%>

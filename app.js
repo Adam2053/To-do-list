@@ -65,18 +65,32 @@ app.post('/', function(req, res){
 
 
 // Groceries page post req 
-app.post('/groceries', (req, res)=>{
-    var addItem = req.body.hasOwnProperty('button') // Has own property checks if a key exists in an object
+
+app.post('/groceries', function(req, res){
+    var addItem = req.body.hasOwnProperty('button')
     var lastElm = (groceries.length-1)
 
-    if (addItem){
+    if (addItem)
+    {
         groceries.push(req.body.newItem)
     }else{
         groceries.pop(lastElm)
     }
     res.redirect('/groceries')
-
 })
+
+// app.post('/groceries', (req, res)=>{
+//     var addItem = req.body.hasOwnProperty('button') // Has own property checks if a key exists in an object
+//     var lastElm = (groceries.length-1)
+
+//     if (addItem){
+//         groceries.push(req.body.newItem)
+//     }else{
+//         groceries.pop(lastElm)
+//     }
+//     console.log("post req")
+//     res.redirect('/groceries')
+// })
 
 
 // Server
