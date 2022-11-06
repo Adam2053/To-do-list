@@ -4,10 +4,12 @@
     </div>
     <div class="box">
         <%for(var i = 0; i<groc.length; i++){%>
-            <div class="item">
-                <input type="checkbox">
-                <p><%=groc[i]%></p>
-            </div>
+            <form action="/groceries" method="post">
+                <div class="item">
+                    <input type="checkbox" name="checkbox" onchange="this.form.submit()" value="<%= groc[i]._id %>">
+                    <p><%=groc[i].name%></p>
+                </div>
+            </form>
         <%}%>
         <form class="item" action="/groceries" method="post">
             <input type="text" name="newItem" autocomplete="off" placeholder="New Item">

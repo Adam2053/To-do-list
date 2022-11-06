@@ -4,62 +4,146 @@ const bodyParser = require('body-parser')
 const request = require('request')
 const { text } = require("body-parser")
 const app = express()
+const mongoose = require('mongoose')
 
-var items = ["Buy Food", "Cook Food", "Eat Food"]
-var groceries = []
+const _ = require('lodash')
 
-app.use(express.static("public"))
+// Old way to store data 
+// var items = ["Buy Food", "Cook Food", "Eat Food"]
+// var groceries = []
+
+app.use(express.static("public")) // will allow express to look into the public folder for static files.
 app.use(bodyParser.urlencoded({extended:true}))
-app.use(express.static("public"))
 
 app.set('view engine', 'ejs') // initialize the ejs module in the app
 
+// Connecting app to database 
+const urlDB = 'mongodb+srv://adam2053:adamMaratha@cluster0.xjrvkwb.mongodb.net/todolistDB'
+mongoose.connect(urlDB)
+
+// Creating list-items schema
+
+const itemsSchema = {
+    name:String
+}
+
+// list schema
+
+const listSchema  = {
+    name:String,
+    items: [itemsSchema]
+}
+
+const List = mongoose.model('list', listSchema)
+
+
+// Creating mongoose model 
+
+const Item = mongoose.model('item', itemsSchema)
+const Grocery = mongoose.model('grocery', itemsSchema)
+
+const defaultItems = []
 
 // Get request
 
 // Home page get request 
 app.get('/', function(req, res){
 
-    var today = new Date() // this method initialises the Date and Time Object 
-    var currentDay = today.getDay() // getDate() is used to get today's date 
-    
-    var options = {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long'
-    }
-    
-    var day = today.toLocaleDateString('en-us', options)
-    
-    res.render("list", {
-        kindOfDay: day,
-        newListItems: items,
-    })  // will look for views folder in the directory and then look for the file name provided as first parameter and second parameter is a java script object to store variable to be is used via html code using ejs....
+    Item.find({}, (err, foundItems)=>{
+        res.render("list", {
+            kindOfDay: 'Today',
+            newListItems: foundItems
+        })
+    })
+
 })
 
 
 // Groceries page get request 
 app.get('/groceries', (req, res)=>{
-    res.render('groceries', {
-        groc: groceries
+    Grocery.find({}, (err, foundItems)=>{
+        res.render('groceries', {
+            groc: foundItems
+        })
     })
 })
 
-// Post request 
+// Post requests
 
 
 // Home page post req
 app.post('/', function(req, res){
 
     var addItem = req.body.hasOwnProperty('button')
-    var lastElm = (items.length-1)
+    const listName = req.body.button
+    const lName = req.body.remove
+    const itemName = req.body.newItem
+    const item = new Item({
+        name:itemName
+    })
 
-    if (addItem){
-        items.push(req.body.newItem)
+
+    if(addItem){
+        if(listName === 'Today'){
+            item.save()
+            res.redirect('/')
+        }else{
+            List.findOne({name:listName}, (err, foundList)=>{
+                foundList.items.push(item)
+                foundList.save()
+                res.redirect(`/${listName}`)
+            })
+        }
     }else{
-        items.pop(lastElm)
+        if(lName === 'Today'){
+            Item.find({}, (err, found)=>{
+                var lastElm = found[found.length-1]._id
+                Item.findByIdAndDelete(lastElm, (err)=>{
+                    if(err){
+                        console.log(err);
+                    }else{
+                        console.log('done');
+                    }
+                })
+            })
+            
+            res.redirect('/')
+        }else{
+            List.find({}, (err, found)=>{
+                const array = found[found.length-1].items
+                const lastId = array[array.length-1]._id
+                List.findOneAndUpdate({name:lName}, {$pull: {items: {_id:lastId}}}, (err, foundList)=>{
+                    if(!err){
+                        res.redirect(`/${lName}`)
+                    }
+                })
+            })
+        }
     }
-    res.redirect('/')
+
+})
+
+app.post('/delete', (req, res)=>{
+
+    const checkedboxId = req.body.checkbox
+    const listName = req.body.name
+
+    if(listName==='Today'){
+        Item.findByIdAndDelete(checkedboxId, (err)=>{
+            if(err){
+                console.log(err);
+            }else{
+                console.log('done');
+            }
+        })
+        res.redirect('/')
+    }else{
+        List.findOneAndUpdate({name: listName}, {$pull: {items:{_id:checkedboxId}}}, (err, foundList)=>{
+            if(!err){
+                res.redirect(`/${listName}`)
+            }
+        })
+    }
 
 })
 
@@ -67,30 +151,69 @@ app.post('/', function(req, res){
 // Groceries page post req 
 
 app.post('/groceries', function(req, res){
-    var addItem = req.body.hasOwnProperty('button')
-    var lastElm = (groceries.length-1)
+    var button = req.body.hasOwnProperty('button')
+    var remove = req.body.hasOwnProperty('remove')
+    // var lastElm = (groceries.length-1)
+    if (button) {
+        const itemName = req.body.newItem
+        const groc = new Grocery({
+            name:itemName
+        })
+        groc.save()
 
-    if (addItem)
-    {
-        groceries.push(req.body.newItem)
-    }else{
-        groceries.pop(lastElm)
+        res.redirect('/groceries')
+    }else if (remove) {
+
+        Grocery.find({}, (err, found)=>{
+            Grocery.findByIdAndDelete(found[found.length-1]._id, (err)=>{
+                if(err){
+                    console.log(err);
+                }else{
+                    console.log('deleted');
+                }
+            })
+        })
+
+        res.redirect('/groceries')
+    }else {
+        Grocery.findByIdAndDelete(req.body.checkbox, (err)=>{
+            if(err){
+                console.log(err);
+            }else{
+                console.log('deleted via checkbox');
+            }
+        })
+        res.redirect('/groceries')
     }
-    res.redirect('/groceries')
 })
 
-// app.post('/groceries', (req, res)=>{
-//     var addItem = req.body.hasOwnProperty('button') // Has own property checks if a key exists in an object
-//     var lastElm = (groceries.length-1)
+// Dynamic route parameters
+app.get('/:customListName', (req, res)=>{
+    const customListName = _.capitalize(req.params.customListName)
+    
 
-//     if (addItem){
-//         groceries.push(req.body.newItem)
-//     }else{
-//         groceries.pop(lastElm)
-//     }
-//     console.log("post req")
-//     res.redirect('/groceries')
-// })
+    List.findOne({name: customListName}, (err, foundList)=>{
+        if(!err){
+            if(!foundList){
+                // create new list
+                const list = new List({
+                    name: customListName,
+                    items: defaultItems
+                })
+                list.save()
+                res.redirect(`/${customListName}`)
+
+            }else{
+                // show existing list
+                res.render('list', {
+                    kindOfDay: foundList.name,
+                    newListItems: foundList.items
+                })
+            }
+        }
+    })
+
+})
 
 
 // Server
@@ -98,10 +221,3 @@ app.listen(process.env.PORT || 3000, function(req, res){
     console.log("Server is running on port 3000");
 })
 
-
-// previous logic for add button 
-
-// app.post('/', function(req, res){
-//     items.push(req.body.newItem)
-//     res.redirect('/')
-// })

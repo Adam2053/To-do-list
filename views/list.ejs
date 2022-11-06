@@ -3,16 +3,25 @@
         <h1> <%= kindOfDay %> </h1>
     </div>
     <div class="box">
-        <%for(var i = 0; i<newListItems.length; i++){%>
+        <%newListItems.forEach((elm)=>{%>
+            <form action="/delete" method="post">
+                <div class="item">
+                    <input type="checkbox" name="checkbox" onchange="this.form.submit()" value="<%= elm._id %>" >
+                    <p><%=elm.name%></p>
+                </div>
+                <input type="hidden" name="name" value="<%= kindOfDay %>">
+            </form>
+        <%})%>
+        <!-- <%for(var i = 0; i<newListItems.length; i++){%>
             <div class="item">
                 <input type="checkbox">
-                <p><%=newListItems[i]%></p>
+                <p><%=newListItems[i].name%></p>
             </div>
-        <%}%>
+        <%}%> -->
         <form class="item" action="/" method="post">
             <input type="text" name="newItem" autocomplete="off" placeholder="New Item">
-            <button type="submit" name="button">+</button>
-            <button type="submit" name="remove">-</button>
+            <button type="submit" name="button" value="<%= kindOfDay %>">+</button>
+            <button type="submit" name="remove" value="<%= kindOfDay %>">-</button>
         </form>
     </div>
 <%- include('footer'); -%>
