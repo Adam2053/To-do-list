@@ -109,7 +109,7 @@ app.post('/', function(req, res){
             
             res.redirect('/')
         }else{
-            List.find({}, (err, found)=>{
+            List.find({name:lName}, (err, found)=>{
                 const array = found[found.length-1].items
                 const lastId = array[array.length-1]._id
                 List.findOneAndUpdate({name:lName}, {$pull: {items: {_id:lastId}}}, (err, foundList)=>{
